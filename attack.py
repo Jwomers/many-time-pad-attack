@@ -28,22 +28,25 @@ final_key = [None]*150
 known_key_positions = set()
 
 # For each ciphertext
-for current_index in range(0,len(ciphers)):
+for current_index, ciphertext in enumerate(ciphers):
+
 	counter = collections.Counter()
 	# for each other ciphertext
-	for index, value in enumerate(ciphers):
+	for index, ciphertext2 in enumerate(ciphers):
 		if current_index != index: # don't xor a ciphertext with itself
-			for index2, char in enumerate(strxor(ciphers[current_index].decode('hex'), value.decode('hex'))): # Xor the two ciphertexts
+			for indexOfChar, char in enumerate(strxor(ciphertext.decode('hex'), ciphertext2.decode('hex'))): # Xor the two ciphertexts
 				# If a character in the xored result is a alphanumeric character, it means there was probably a space character in one of the plaintexts (we don't know which one)
-				if char in string.printable and char.isalpha(): counter[index2] += 1 # Increment the counter at this index
+				if char in string.printable and char.isalpha(): counter[indexOfChar] += 1 # Increment the counter at this index
 	knownSpaceIndexes = []
+
 	# Loop through all positions where a space character was possible in the current_index cipher
 	for ind, val in counter.items():
 		# If a space was found at least 7 times at this index out of the 9 possible XORS, then the space character was likely from the current_index cipher!
 		if val >= 7: knownSpaceIndexes.append(ind)
 	#print knownSpaceIndexes # Shows all the positions where we now know the key!
+
 	# Now Xor the current_index with spaces, and at the knownSpaceIndexes positions we get the key back!
-	xor_with_spaces = strxor(ciphers[current_index].decode('hex'),' '*150)
+	xor_with_spaces = strxor(ciphertext.decode('hex'),' '*150)
 	for index in knownSpaceIndexes:
 		# Store the key's value at the correct position
 		final_key[index] = xor_with_spaces[index].encode('hex')
@@ -57,9 +60,12 @@ output = strxor(target_cipher.decode('hex'),final_key_hex.decode('hex'))
 # Print the output, printing a * if that character is not known yet
 print ''.join([char if index in known_key_positions else '*' for index, char in enumerate(output)])
 
-# From the output that this printed out, we can manually complete the target plaintext from
+'''
+Manual step
+'''
+# From the output this prints, we can manually complete the target plaintext from:
 # The secuet-mes*age*is: Wh** usi|g **str*am cipher, nev***use th* k*y *ore than onc*
-# to
+# to:
 # The secret message is: When using a stream cipher, never use the key more than once
 
 # We then confirm this is correct by producing the key from this, and decrpyting all the other messages to ensure they make grammatical sense
